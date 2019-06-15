@@ -94,9 +94,9 @@ void HGCalCLUEAlgo::makeClusters() {
 std::vector<reco::BasicCluster> HGCalCLUEAlgo::getClusters(bool) {
   // //////////////////////////////
   // std::ofstream hitsFile;
-  // hitsFile.open ("hitsFile_tile_GPU.csv");
+  // hitsFile.open ("validation/hitsFile_tile_GPU.csv");
   // std::ofstream clusFile;
-  // clusFile.open ("clusFile_tile_GPU.csv");
+  // clusFile.open ("validation/clusFile_tile_GPU.csv");
 
 
   std::vector<int> offsets(numberOfClustersPerLayer_.size(),0);

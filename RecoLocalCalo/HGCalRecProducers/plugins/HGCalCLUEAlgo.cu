@@ -10,6 +10,10 @@
 #include <limits>
 #include <iostream>
 
+// for timing
+#include <chrono>
+#include <ctime>
+
 
 namespace HGCalRecAlgos{
   // This has to be the same as cpu version
@@ -250,6 +254,7 @@ namespace HGCalRecAlgos{
     //////////////////////////////////////////////
     // copy from cells to local SoA
     //////////////////////////////////////////////
+    auto start1 = std::chrono::high_resolution_clock::now();
 
     int indexLayerEnd[numberOfLayers];
     // populate local SoA
@@ -276,10 +281,12 @@ namespace HGCalRecAlgos{
     localSoA.nearestHigher.resize(numberOfCells,-1);
     localSoA.clusterIndex.resize(numberOfCells,-1);
     localSoA.isSeed.resize(numberOfCells,0);
+    auto finish1 = std::chrono::high_resolution_clock::now();
 
     //////////////////////////////////////////////
     // run on GPU
     //////////////////////////////////////////////
+    auto start2 = std::chrono::high_resolution_clock::now();
 
     CellsOnLayerPtr h_cells,d_cells;
     h_cells.initHost(localSoA);
@@ -333,10 +340,11 @@ namespace HGCalRecAlgos{
     cudaFree(d_seeds);
     cudaFree(d_followers);
     cudaFree(d_nClusters);
-
+    auto finish2 = std::chrono::high_resolution_clock::now();
     //////////////////////////////////////////////
     // copy from local SoA to cells 
     //////////////////////////////////////////////
+    auto start3 = std::chrono::high_resolution_clock::now();
     for (int i=0; i < numberOfLayers; i++){
       int numberOfCellsOnLayer = cells_[i].weight.size();
       int indexBegin = indexLayerEnd[i]+1 - numberOfCellsOnLayer;
@@ -352,7 +360,7 @@ namespace HGCalRecAlgos{
       memcpy(cells_[i].nearestHigher.data(), &localSoA.nearestHigher[indexBegin], sizeof(int)*numberOfCellsOnLayer);
       memcpy(cells_[i].clusterIndex.data(), &localSoA.clusterIndex[indexBegin], sizeof(int)*numberOfCellsOnLayer); 
       memcpy(cells_[i].isSeed.data(), &localSoA.isSeed[indexBegin], sizeof(int)*numberOfCellsOnLayer);
-
+  
       // for (int j=0; j<numberOfCellsOnLayer; j++){
       //   int jj = indexBegin+j;
       //   cells_[i].rho.emplace_back(localSoA.rho[jj]);
@@ -362,6 +370,11 @@ namespace HGCalRecAlgos{
       //   cells_[i].isSeed.emplace_back(localSoA.isSeed[jj]);
       // }
     }
+
+    auto finish3 = std::chrono::high_resolution_clock::now();
+    std::cout << (std::chrono::duration<double>(finish1-start1)).count() << "," 
+              << (std::chrono::duration<double>(finish2-start2)).count() << ","
+              << (std::chrono::duration<double>(finish3-start3)).count() << ",";
 
   }
 

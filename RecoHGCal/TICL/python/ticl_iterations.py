@@ -121,15 +121,16 @@ def TICL_iterations(process):
   process.hgcalMultiClusters = hgcalMultiClusters
   process.TICL_Task = cms.Task(process.HGCalUncalibRecHit,
       process.HGCalRecHit,
-      process.hgcalLayerClusters,
-      process.FilteredLayerClustersMIP,
-      process.TICLLayerTileProducer,
-      process.TrackstersMIP,
-      process.MultiClustersFromTrackstersMIP,
-      process.FilteredLayerClusters,
-      process.Tracksters,
-      process.MultiClustersFromTracksters,
-      process.hgcalMultiClusters)
+      process.hgcalLayerClusters
+    #   process.FilteredLayerClustersMIP,
+    #   process.TICLLayerTileProducer,
+    #   process.TrackstersMIP,
+    #   process.MultiClustersFromTrackstersMIP,
+    #   process.FilteredLayerClusters,
+    #   process.Tracksters,
+    #   process.MultiClustersFromTracksters,
+    #   process.hgcalMultiClusters
+      )
   process.schedule = cms.Schedule(process.raw2digi_step,process.FEVTDEBUGHLToutput_step)
   process.schedule.associate(process.TICL_Task)
   return process

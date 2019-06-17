@@ -362,7 +362,6 @@ namespace HGCalRecAlgos{
       memcpy(cells_[i].nearestHigher.data(), &localSoA.nearestHigher[indexBegin], sizeof(int)*numberOfCellsOnLayer);
       memcpy(cells_[i].clusterIndex.data(), &localSoA.clusterIndex[indexBegin], sizeof(int)*numberOfCellsOnLayer); 
       memcpy(cells_[i].isSeed.data(), &localSoA.isSeed[indexBegin], sizeof(int)*numberOfCellsOnLayer);
-  =
     }
 
     auto finish3 = std::chrono::high_resolution_clock::now();

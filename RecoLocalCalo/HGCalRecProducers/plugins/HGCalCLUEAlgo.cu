@@ -253,6 +253,7 @@ namespace HGCalRecAlgos{
 
     //////////////////////////////////////////////
     // copy from cells to local SoA
+    // this is fast and takes 3~4 ms on a PU200 event
     //////////////////////////////////////////////
     auto start1 = std::chrono::high_resolution_clock::now();
 
@@ -325,7 +326,6 @@ namespace HGCalRecAlgos{
     const dim3 oneGridSize(1,1,1);
     kernel_get_n_clusters <<<oneGridSize,nlayerBlockSize>>>(d_seeds,d_nClusters);
     cudaMemcpy(h_nClusters, d_nClusters, sizeof(int)*numberOfLayers, cudaMemcpyDeviceToHost);
-    // for (int i=0;i<numberOfLayers;i++) std::cout<<numberOfClustersPerLayer_[i] << std::endl;
 
     // assign clusters
     const dim3 BlockSize1024(1024,1);
@@ -341,8 +341,10 @@ namespace HGCalRecAlgos{
     cudaFree(d_followers);
     cudaFree(d_nClusters);
     auto finish2 = std::chrono::high_resolution_clock::now();
+
     //////////////////////////////////////////////
     // copy from local SoA to cells 
+    // this is fast and takes 1~2 ms on a PU200 event
     //////////////////////////////////////////////
     auto start3 = std::chrono::high_resolution_clock::now();
     for (int i=0; i < numberOfLayers; i++){
@@ -360,15 +362,7 @@ namespace HGCalRecAlgos{
       memcpy(cells_[i].nearestHigher.data(), &localSoA.nearestHigher[indexBegin], sizeof(int)*numberOfCellsOnLayer);
       memcpy(cells_[i].clusterIndex.data(), &localSoA.clusterIndex[indexBegin], sizeof(int)*numberOfCellsOnLayer); 
       memcpy(cells_[i].isSeed.data(), &localSoA.isSeed[indexBegin], sizeof(int)*numberOfCellsOnLayer);
-  
-      // for (int j=0; j<numberOfCellsOnLayer; j++){
-      //   int jj = indexBegin+j;
-      //   cells_[i].rho.emplace_back(localSoA.rho[jj]);
-      //   cells_[i].delta.emplace_back(localSoA.delta[jj]);
-      //   cells_[i].nearestHigher.emplace_back(localSoA.nearestHigher[jj]);
-      //   cells_[i].clusterIndex.emplace_back(localSoA.clusterIndex[jj]);
-      //   cells_[i].isSeed.emplace_back(localSoA.isSeed[jj]);
-      // }
+  =
     }
 
     auto finish3 = std::chrono::high_resolution_clock::now();

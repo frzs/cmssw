@@ -57,31 +57,30 @@ namespace HGCalRecAlgos{
     
     int idxOne = blockIdx.x * blockDim.x + threadIdx.x;
     if (idxOne < numberOfCells){
+      double rho{0.};
       int layer = d_cells.layer[idxOne];
       float delta_c = getDeltaCFromLayer(layer, delta_c_EE, delta_c_FH, delta_c_BH);
 
       // search box with histogram
-      int xBinMin = d_hist[layer].getXBin( d_cells.x[idxOne] - delta_c);
-      int xBinMax = d_hist[layer].getXBin( d_cells.x[idxOne] + delta_c);
-      int yBinMin = d_hist[layer].getYBin( d_cells.y[idxOne] - delta_c);
-      int yBinMax = d_hist[layer].getYBin( d_cells.y[idxOne] + delta_c);
+      int4 search_box = d_hist[layer].searchBox(d_cells.x[idxOne] - delta_c, d_cells.x[idxOne] + delta_c, d_cells.y[idxOne] - delta_c, d_cells.y[idxOne] + delta_c);
 
       // loop over bins in search box
-      for(int xBin = xBinMin; xBin < xBinMax+1; ++xBin) {
-        for(int yBin = yBinMin; yBin < yBinMax+1; ++yBin) {
+      for(int xBin = search_box.x; xBin < search_box.y+1; ++xBin) {
+        for(int yBin = search_box.z; yBin < search_box.w+1; ++yBin) {
           int binIndex = d_hist[layer].getGlobalBinByBin(xBin,yBin);
           int binSize  = d_hist[layer][binIndex].size();
 
           // loop over bin contents
           for (int j = 0; j < binSize; j++) {
             int idxTwo = d_hist[layer][binIndex][j];
-            float distance = sqrt( (d_cells.x[idxOne]-d_cells.x[idxTwo])*(d_cells.x[idxOne]-d_cells.x[idxTwo]) + (d_cells.y[idxOne]-d_cells.y[idxTwo])*(d_cells.y[idxOne]-d_cells.y[idxTwo]));
+            float distance = std::sqrt( (d_cells.x[idxOne]-d_cells.x[idxTwo])*(d_cells.x[idxOne]-d_cells.x[idxTwo]) + (d_cells.y[idxOne]-d_cells.y[idxTwo])*(d_cells.y[idxOne]-d_cells.y[idxTwo]));
             if(distance < delta_c) { 
-              d_cells.rho[idxOne] += (idxOne == idxTwo ? 1. : 0.5) * d_cells.weight[idxTwo];
+              rho += (idxOne == idxTwo ? 1. : 0.5) * d_cells.weight[idxTwo];              
             }
           }
         }
       }
+      d_cells.rho[idxOne] = rho;
     }
   } //kernel
 

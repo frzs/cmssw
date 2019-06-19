@@ -151,7 +151,7 @@ class HGCalCLUEAlgo : public HGCalClusteringAlgoBase {
   //this are the tiles for the electromagnetic part
   std::vector<HGCalLayerTiles> layerTiles_;
   
-  std::vector<CellsOnLayer<float> > cells_;
+  std::vector<CellsOnLayer> cells_;
   
 
   std::vector<int> numberOfClustersPerLayer_;

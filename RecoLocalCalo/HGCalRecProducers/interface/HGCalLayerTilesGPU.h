@@ -61,8 +61,8 @@ class HGCalLayerTilesGPU {
     }
 
     __host__ __device__
-    std::array<int,4> searchBox(float xMin, float xMax, float yMin, float yMax){
-      return std::array<int, 4>({{ getXBin(xMin), getXBin(xMax), getYBin(yMin), getYBin(yMax)}});
+    int4 searchBox(float xMin, float xMax, float yMin, float yMax){
+      return int4{ getXBin(xMin), getXBin(xMax), getYBin(yMin), getYBin(yMax)};
     }
 
     __host__ __device__

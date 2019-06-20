@@ -96,7 +96,7 @@ struct CellsOnLayerPtr
   int *isSeed;
 
 
-  void initHost(CellsOnLayer<float>& cellsOnLayer ){
+  void initHost(CellsOnLayer& cellsOnLayer ){
     x = cellsOnLayer.x.data();
     y = cellsOnLayer.y.data();
     layer = cellsOnLayer.layer.data();

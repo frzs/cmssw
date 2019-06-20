@@ -240,7 +240,7 @@ namespace HGCalRecAlgos{
 
 
 
-  void clueGPU(std::vector<CellsOnLayer<float>> & cells_, 
+  void clueGPU(std::vector<CellsOnLayer> & cells_, 
               std::vector<int> & numberOfClustersPerLayer_, 
               float delta_c_EE, 
               float delta_c_FH, 
@@ -258,7 +258,7 @@ namespace HGCalRecAlgos{
 
     int indexLayerEnd[numberOfLayers];
     // populate local SoA
-    CellsOnLayer<float> localSoA;
+    CellsOnLayer localSoA;
     for (int i=0; i < numberOfLayers; i++){
       localSoA.x.insert( localSoA.x.end(), cells_[i].x.begin(), cells_[i].x.end() );
       localSoA.y.insert( localSoA.y.end(), cells_[i].y.begin(), cells_[i].y.end() );

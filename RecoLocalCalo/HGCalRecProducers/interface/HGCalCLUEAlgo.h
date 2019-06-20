@@ -177,7 +177,7 @@ class HGCalCLUEAlgo : public HGCalClusteringAlgoBase {
 };
 
 namespace HGCalRecAlgos {
-  void clueGPU(std::vector<CellsOnLayer<float>> &, std::vector<int> &, float, float, float, float, float  );
+  void clueGPU(std::vector<CellsOnLayer> &, std::vector<int> &, float, float, float, float, float  );
 }
 
 #endif

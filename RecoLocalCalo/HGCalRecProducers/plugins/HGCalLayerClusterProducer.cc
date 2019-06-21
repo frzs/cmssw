@@ -136,7 +136,7 @@ void HGCalLayerClusterProducer::produce(edm::Event& evt,
   // timing in digi for BH not implemented for now
   std::unordered_map<uint32_t, float> hitmap;
 
-  auto start1 = std::chrono::high_resolution_clock::now();
+  // auto start1 = std::chrono::high_resolution_clock::now();
   switch(algoId){
   case reco::CaloCluster::hgcal_em:
     evt.getByToken(hits_ee_token,ee_hits);
@@ -170,23 +170,27 @@ void HGCalLayerClusterProducer::produce(edm::Event& evt,
   default:
     break;
   }
-  auto finish1 = std::chrono::high_resolution_clock::now();
+  // auto finish1 = std::chrono::high_resolution_clock::now();
 
 
-  auto start2 = std::chrono::high_resolution_clock::now();
+  //auto start2 = std::chrono::high_resolution_clock::now();
   algo->makeClusters();
-  auto finish2 = std::chrono::high_resolution_clock::now();
+  //auto finish2 = std::chrono::high_resolution_clock::now();
 
+  //std::ofstream timeFile;
+  //timeFile.open ("makeClustersTiming.txt", std::ofstream::app);
+  //timeFile << (std::chrono::duration<double>(finish2-start2)).count() << "\n"; 
+  //timeFile.close();
 
-  auto start3 = std::chrono::high_resolution_clock::now();
+  // auto start3 = std::chrono::high_resolution_clock::now();
   *clusters = algo->getClusters(false);
   if(doSharing)
     *clusters_sharing = algo->getClusters(true);
-  auto finish3 = std::chrono::high_resolution_clock::now();
+  // auto finish3 = std::chrono::high_resolution_clock::now();
   
-  std::cout << (std::chrono::duration<double>(finish1-start1)).count() << "," 
-            << (std::chrono::duration<double>(finish2-start2)).count() << ","
-            << (std::chrono::duration<double>(finish3-start3)).count() << std::endl;
+  // std::cout << (std::chrono::duration<double>(finish1-start1)).count() << "," 
+            // << (std::chrono::duration<double>(finish2-start2)).count() << ","
+            // << (std::chrono::duration<double>(finish3-start3)).count() << std::endl;
 
   auto clusterHandle = evt.put(std::move(clusters));
   auto clusterHandleSharing = evt.put(std::move(clusters_sharing),"sharing");

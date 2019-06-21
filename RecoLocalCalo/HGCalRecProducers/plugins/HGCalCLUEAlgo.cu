@@ -60,9 +60,10 @@ namespace HGCalRecAlgos{
       double rho{0.};
       int layer = d_cells.layer[idxOne];
       float delta_c = getDeltaCFromLayer(layer, delta_c_EE, delta_c_FH, delta_c_BH);
-
+      float xOne = d_cells.x[idxOne];
+      float yOne = d_cells.y[idxOne];
       // search box with histogram
-      int4 search_box = d_hist[layer].searchBox(d_cells.x[idxOne] - delta_c, d_cells.x[idxOne] + delta_c, d_cells.y[idxOne] - delta_c, d_cells.y[idxOne] + delta_c);
+      int4 search_box = d_hist[layer].searchBox(xOne - delta_c, xOne + delta_c, yOne - delta_c, yOne + delta_c);
 
       // loop over bins in search box
       for(int xBin = search_box.x; xBin < search_box.y+1; ++xBin) {
@@ -73,7 +74,9 @@ namespace HGCalRecAlgos{
           // loop over bin contents
           for (int j = 0; j < binSize; j++) {
             int idxTwo = d_hist[layer][binIndex][j];
-            float distance = std::sqrt( (d_cells.x[idxOne]-d_cells.x[idxTwo])*(d_cells.x[idxOne]-d_cells.x[idxTwo]) + (d_cells.y[idxOne]-d_cells.y[idxTwo])*(d_cells.y[idxOne]-d_cells.y[idxTwo]));
+            float xTwo = d_cells.x[idxTwo];
+            float yTwo = d_cells.y[idxTwo];
+            float distance = std::sqrt((xOne-xTwo)*(xOne-xTwo) + (yOne-yTwo)*(yOne-yTwo));
             if(distance < delta_c) { 
               rho += (idxOne == idxTwo ? 1. : 0.5) * d_cells.weight[idxTwo];              
             }
@@ -101,24 +104,26 @@ namespace HGCalRecAlgos{
 
       float idxOne_delta = std::numeric_limits<float>::max();
       int idxOne_nearestHigher = -1;
+      float xOne = d_cells.x[idxOne];
+      float yOne = d_cells.y[idxOne];
+      float rhoOne = d_cells.rho[idxOne];
 
       // search box with histogram
-      int xBinMin = d_hist[layer].getXBin( d_cells.x[idxOne] - outlierDeltaFactor_*delta_c);
-      int xBinMax = d_hist[layer].getXBin( d_cells.x[idxOne] + outlierDeltaFactor_*delta_c);
-      int yBinMin = d_hist[layer].getYBin( d_cells.y[idxOne] - outlierDeltaFactor_*delta_c);
-      int yBinMax = d_hist[layer].getYBin( d_cells.y[idxOne] + outlierDeltaFactor_*delta_c);
+      int4 search_box = d_hist[layer].searchBox(xOne - delta_c, xOne + delta_c, yOne - delta_c, yOne + delta_c);
 
       // loop over bins in search box
-      for(int xBin = xBinMin; xBin < xBinMax+1; ++xBin) {
-        for(int yBin = yBinMin; yBin < yBinMax+1; ++yBin) {
+      for(int xBin = search_box.x; xBin < search_box.y+1; ++xBin) {
+        for(int yBin = search_box.z; yBin < search_box.w+1; ++yBin) {
           int binIndex = d_hist[layer].getGlobalBinByBin(xBin,yBin);
           int binSize  = d_hist[layer][binIndex].size();
 
           // loop over bin contents
           for (int j = 0; j < binSize; j++) {
             int idxTwo = d_hist[layer][binIndex][j];
-            float distance = sqrt( (d_cells.x[idxOne]-d_cells.x[idxTwo])*(d_cells.x[idxOne]-d_cells.x[idxTwo]) + (d_cells.y[idxOne]-d_cells.y[idxTwo])*(d_cells.y[idxOne]-d_cells.y[idxTwo]));
-            bool foundHigher = d_cells.rho[idxTwo] > d_cells.rho[idxOne];
+            float xTwo = d_cells.x[idxTwo];
+            float yTwo = d_cells.y[idxTwo];
+            float distance = std::sqrt((xOne-xTwo)*(xOne-xTwo) + (yOne-yTwo)*(yOne-yTwo));
+            bool foundHigher = d_cells.rho[idxTwo] > rhoOne;
             if(foundHigher && distance <= idxOne_delta) {
               // update i_delta
               idxOne_delta = distance;
@@ -166,8 +171,11 @@ namespace HGCalRecAlgos{
       // initialize clusterIndex
       d_cells.clusterIndex[idxOne] = -1;
 
-      bool isSeed = (d_cells.delta[idxOne] > delta_c) && (d_cells.rho[idxOne] >= rho_c);
-      bool isOutlier = (d_cells.delta[idxOne] > outlierDeltaFactor_*delta_c) && (d_cells.rho[idxOne] < rho_c);
+      float deltaOne = d_cells.delta[idxOne];
+      float rhoOne = d_cells.rho[idxOne];
+
+      bool isSeed = (deltaOne > delta_c) && (rhoOne >= rho_c);
+      bool isOutlier = (deltaOne > outlierDeltaFactor_*delta_c) && (rhoOne < rho_c);
 
       if (isSeed) {
         d_cells.isSeed[idxOne] = 1;
@@ -254,7 +262,7 @@ namespace HGCalRecAlgos{
     // copy from cells to local SoA
     // this is fast and takes 3~4 ms on a PU200 event
     //////////////////////////////////////////////
-    auto start1 = std::chrono::high_resolution_clock::now();
+    // auto start1 = std::chrono::high_resolution_clock::now();
 
     int indexLayerEnd[numberOfLayers];
     // populate local SoA
@@ -281,12 +289,12 @@ namespace HGCalRecAlgos{
     localSoA.nearestHigher.resize(numberOfCells,-1);
     localSoA.clusterIndex.resize(numberOfCells,-1);
     localSoA.isSeed.resize(numberOfCells,0);
-    auto finish1 = std::chrono::high_resolution_clock::now();
+    // auto finish1 = std::chrono::high_resolution_clock::now();
 
     //////////////////////////////////////////////
     // run on GPU
     //////////////////////////////////////////////
-    auto start2 = std::chrono::high_resolution_clock::now();
+    // auto start2 = std::chrono::high_resolution_clock::now();
 
     CellsOnLayerPtr h_cells,d_cells;
     h_cells.initHost(localSoA);
@@ -339,13 +347,13 @@ namespace HGCalRecAlgos{
     cudaFree(d_seeds);
     cudaFree(d_followers);
     cudaFree(d_nClusters);
-    auto finish2 = std::chrono::high_resolution_clock::now();
+    // auto finish2 = std::chrono::high_resolution_clock::now();
 
     //////////////////////////////////////////////
     // copy from local SoA to cells 
     // this is fast and takes 1~2 ms on a PU200 event
     //////////////////////////////////////////////
-    auto start3 = std::chrono::high_resolution_clock::now();
+    // auto start3 = std::chrono::high_resolution_clock::now();
     for (int i=0; i < numberOfLayers; i++){
       int numberOfCellsOnLayer = cells_[i].weight.size();
       int indexBegin = indexLayerEnd[i]+1 - numberOfCellsOnLayer;
@@ -363,10 +371,10 @@ namespace HGCalRecAlgos{
       memcpy(cells_[i].isSeed.data(), &localSoA.isSeed[indexBegin], sizeof(int)*numberOfCellsOnLayer);
     }
 
-    auto finish3 = std::chrono::high_resolution_clock::now();
-    std::cout << (std::chrono::duration<double>(finish1-start1)).count() << "," 
-              << (std::chrono::duration<double>(finish2-start2)).count() << ","
-              << (std::chrono::duration<double>(finish3-start3)).count() << ",";
+    // auto finish3 = std::chrono::high_resolution_clock::now();
+    // std::cout << (std::chrono::duration<double>(finish1-start1)).count() << "," 
+    //           << (std::chrono::duration<double>(finish2-start2)).count() << ","
+    //           << (std::chrono::duration<double>(finish3-start3)).count() << ",";
 
   }
 

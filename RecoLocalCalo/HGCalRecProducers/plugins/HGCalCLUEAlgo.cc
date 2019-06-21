@@ -85,8 +85,8 @@ void HGCalCLUEAlgo::makeClusters() {
 
   HGCalRecAlgos::clueGPU(cells_, numberOfClustersPerLayer_, vecDeltas_[0], vecDeltas_[1], vecDeltas_[2], kappa_, outlierDeltaFactor_);
 
-  // for(unsigned int i=0; i< 2 * maxlayer + 2; ++i)//{
-  //   std::cout << "LAYER " << i << ", numberOfCells = " << cells_[i].detid.size() << ", numberOfClusters = " << numberOfClustersPerLayer_[i] << std::endl;
+  for(unsigned int i=0; i< 2 * maxlayer; ++i)//{
+     std::cout << "LAYER " << i << ", numberOfCells = " << cells_[i].detid.size() << ", numberOfClusters = " << numberOfClustersPerLayer_[i] << std::endl;
   //   for(unsigned int j=0; j<cells_[i].x.size(); j++)
   //     std::cout << "result " << j << " | (" << cells_[i].x[j] << "," << cells_[i].y[j] << ") | rho=" << cells_[i].rho[j] << " | energy=" << cells_[i].weight[j] << " | delta=" << cells_[i].delta[j] << " | nh=" << cells_[i].nearestHigher[j] << " | clIdx=" << cells_[i].clusterIndex[j] << " | isSeed=" << cells_[i].isSeed[j] << std::endl;
 
@@ -98,7 +98,7 @@ void HGCalCLUEAlgo::makeClusters() {
   // printf("5331's rho is %f and 5324's rho is %f , testequal is %d \n", cells_[1].rho[5331], cells_[1].rho[5324], testequal);
 
   //Now that we have the density per point we can store it
-  //for(unsigned int i=0; i< 2 * maxlayer + 2; ++i) { setDensity(i); }
+  //for(unsigned int i=0; i< 2 * maxlayer; ++i) { setDensity(i); }
 
 }
 
@@ -126,7 +126,7 @@ std::vector<reco::BasicCluster> HGCalCLUEAlgo::getClusters(bool) {
   std::vector<std::vector<int> > cellsIdInCluster;
   cellsIdInCluster.reserve(maxClustersOnLayer);
 
-  for(unsigned int layerId = 0; layerId < 2 * maxlayer + 2; ++layerId)
+  for(unsigned int layerId = 0; layerId < 2 * maxlayer; ++layerId)
   {
     cellsIdInCluster.resize(numberOfClustersPerLayer_[layerId]);
     auto& cellsOnLayer = cells_[layerId];

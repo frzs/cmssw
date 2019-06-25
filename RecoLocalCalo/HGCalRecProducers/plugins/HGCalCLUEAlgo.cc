@@ -1,6 +1,7 @@
 #include "RecoLocalCalo/HGCalRecProducers/interface/HGCalCLUEAlgo.h"
 
-
+#include <cuda_runtime.h>
+#include <cuda.h>
 
 // Geometry
 #include "DataFormats/HcalDetId/interface/HcalSubdetector.h"
@@ -83,8 +84,9 @@ void HGCalCLUEAlgo::prepareAlgorithmVariables(unsigned int l)
 // input (reset should be called between events)
 void HGCalCLUEAlgo::makeClusters() {
 
-  HGCalRecAlgos::clueGPU(cells_, numberOfClustersPerLayer_, vecDeltas_[0], vecDeltas_[1], vecDeltas_[2], kappa_, outlierDeltaFactor_);
-
+  // HGCalRecAlgos::clueGPU(cells_, numberOfClustersPerLayer_, vecDeltas_[0], vecDeltas_[1], vecDeltas_[2], kappa_, outlierDeltaFactor_);
+  gpurunner.clueGPU(cells_, numberOfClustersPerLayer_, vecDeltas_[0], vecDeltas_[1], vecDeltas_[2], kappa_, outlierDeltaFactor_);
+  
   for(unsigned int i=0; i< 2 * maxlayer; ++i)//{
      std::cout << "LAYER " << i << ", numberOfCells = " << cells_[i].detid.size() << ", numberOfClusters = " << numberOfClustersPerLayer_[i] << std::endl;
   //   for(unsigned int j=0; j<cells_[i].x.size(); j++)

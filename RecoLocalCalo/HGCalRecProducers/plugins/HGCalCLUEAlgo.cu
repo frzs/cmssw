@@ -3,7 +3,7 @@
 
 #include "HeterogeneousCore/CUDAUtilities/interface/GPUVecArray.h"
 
-
+#include "RecoLocalCalo/HGCalRecProducers/interface/ClueGPURunner.cuh"
 
 //GPU Add
 #include <math.h>
@@ -248,14 +248,15 @@ namespace HGCalRecAlgos{
 
 
 
-  void clueGPU(std::vector<CellsOnLayer> & cells_, 
+    void ClueGPURunner::clueGPU(std::vector<CellsOnLayer> & cells_,
               std::vector<int> & numberOfClustersPerLayer_, 
               float delta_c_EE, 
               float delta_c_FH, 
               float delta_c_BH, 
               float kappa_,
-              float outlierDeltaFactor_ 
+              float outlierDeltaFactor_
               ) {
+
     const int numberOfLayers = cells_.size();
 
     //////////////////////////////////////////////
@@ -281,6 +282,7 @@ namespace HGCalRecAlgos{
         indexLayerEnd[i] = indexLayerEnd[i-1] + numberOfCellsOnLayer;
       }
     }  
+    
 
     const int numberOfCells = indexLayerEnd[numberOfLayers-1] + 1;
     // prepare SoA
@@ -296,9 +298,10 @@ namespace HGCalRecAlgos{
     //////////////////////////////////////////////
     // auto start2 = std::chrono::high_resolution_clock::now();
 
-    CellsOnLayerPtr h_cells,d_cells;
-    h_cells.initHost(localSoA);
-    d_cells.initDevice(h_cells, numberOfCells);
+    ClueGPURunner::assign_cells_number(numberOfCells);
+    ClueGPURunner::init_host(localSoA);
+    ClueGPURunner::clear_set();
+    ClueGPURunner::copy_todevice();
 
     // define local variables : hist
     HGCalLayerTilesGPU *d_hist;
@@ -313,16 +316,14 @@ namespace HGCalRecAlgos{
     cudaMalloc(&d_followers, sizeof(GPU::VecArray<int,maxNFollowers>)*numberOfCells);
     cudaMemset(d_followers, 0x00, sizeof(GPU::VecArray<int,maxNFollowers>)*numberOfCells);
 
-
- 
     // launch kernels
     const dim3 blockSize(64,1,1);
     const dim3 gridSize(ceil(numberOfCells/64.0),1,1);
     
-    kernel_compute_histogram <<<gridSize,blockSize>>>(d_hist, d_cells, numberOfCells);
-    kernel_compute_density <<<gridSize,blockSize>>>(d_hist, d_cells, delta_c_EE, delta_c_FH, delta_c_BH, numberOfCells);
-    kernel_compute_distanceToHigher <<<gridSize,blockSize>>>(d_hist, d_cells, delta_c_EE, delta_c_FH, delta_c_BH, outlierDeltaFactor_, numberOfCells);
-    kernel_find_clusters <<<gridSize,blockSize>>>(d_seeds, d_followers, d_cells, delta_c_EE, delta_c_FH, delta_c_BH, kappa_, outlierDeltaFactor_, numberOfCells);
+    kernel_compute_histogram <<<gridSize,blockSize>>>(d_hist, ClueGPURunner::dc, numberOfCells);
+    kernel_compute_density <<<gridSize,blockSize>>>(d_hist, ClueGPURunner::dc, delta_c_EE, delta_c_FH, delta_c_BH, numberOfCells);
+    kernel_compute_distanceToHigher <<<gridSize,blockSize>>>(d_hist, ClueGPURunner::dc, delta_c_EE, delta_c_FH, delta_c_BH, outlierDeltaFactor_, numberOfCells);
+    kernel_find_clusters <<<gridSize,blockSize>>>(d_seeds, d_followers, ClueGPURunner::dc, delta_c_EE, delta_c_FH, delta_c_BH, kappa_, outlierDeltaFactor_, numberOfCells);
 
     // define local variables :  nclusters
     int *h_nClusters, *d_nClusters;
@@ -338,17 +339,17 @@ namespace HGCalRecAlgos{
     const dim3 BlockSize1024(1024,1);
     const dim3 nlayerGridSize(numberOfLayers,ceil(maxNSeeds/1024.0),1);
     
-    kernel_assign_clusters <<<nlayerGridSize,BlockSize1024>>>(d_seeds, d_followers, d_cells, d_nClusters);
+    kernel_assign_clusters <<<nlayerGridSize,BlockSize1024>>>(d_seeds, d_followers, ClueGPURunner::dc, d_nClusters);
 
-    // cuda free
-    d_cells.cpyDToH(h_cells, numberOfCells);
-    d_cells.freeDevice();
+    ClueGPURunner::copy_tohost();
+    // ClueGPURunner::free_device();
+
     cudaFree(d_hist);
     cudaFree(d_seeds);
     cudaFree(d_followers);
     cudaFree(d_nClusters);
     // auto finish2 = std::chrono::high_resolution_clock::now();
-
+   
     //////////////////////////////////////////////
     // copy from local SoA to cells 
     // this is fast and takes 1~2 ms on a PU200 event
@@ -375,7 +376,6 @@ namespace HGCalRecAlgos{
     // std::cout << (std::chrono::duration<double>(finish1-start1)).count() << "," 
     //           << (std::chrono::duration<double>(finish2-start2)).count() << ","
     //           << (std::chrono::duration<double>(finish3-start3)).count() << ",";
-
   }
 
 
